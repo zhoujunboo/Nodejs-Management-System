@@ -1,0 +1,157 @@
+<!--_meta 作为公共模版分离出去-->
+<!DOCTYPE HTML>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="renderer" content="webkit|ie-comp|ie-stand">
+<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+<meta name="viewport" content="width=device-width,initial-scale=1,minimum-scale=1.0,maximum-scale=1.0,user-scalable=no" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+<link rel="Bookmark" href="favicon.ico" >
+<link rel="Shortcut Icon" href="favicon.ico" />
+<!--[if lt IE 9]>
+<script type="text/javascript" src="lib/html5.js"></script>
+<script type="text/javascript" src="lib/respond.min.js"></script>
+<![endif]-->
+<link rel="stylesheet" type="text/css" href="static/h-ui/css/H-ui.min.css" />
+<link rel="stylesheet" type="text/css" href="static/h-ui.admin/css/H-ui.admin.css" />
+<link rel="stylesheet" type="text/css" href="lib/Hui-iconfont/1.0.8/iconfont.css" />
+
+<link rel="stylesheet" type="text/css" href="static/h-ui.admin/skin/default/skin.css" id="skin" />
+<link rel="stylesheet" type="text/css" href="static/h-ui.admin/css/style.css" />
+<!--[if IE 6]>
+<script type="text/javascript" src="http://lib.h-ui.net/DD_belatedPNG_0.0.8a-min.js" ></script>
+<script>DD_belatedPNG.fix('*');</script><![endif]-->
+<!--/meta 作为公共模版分离出去-->
+
+<title>修改图片</title>
+<link href="lib/webuploader/0.1.5/webuploader.css" rel="stylesheet" type="text/css" />
+</head>
+<body>
+<div class="page-container">
+	<div class="form form-horizontal" id="form-article-add">
+		<div class="row cl">
+			<label class="form-label col-xs-4 col-sm-2">Banner名称</label>
+			<div class="formControls col-xs-8 col-sm-9">
+				<input type="text" class="input-text" value="" placeholder="" id="name" name="">
+			</div>
+		</div>
+
+		<div class="row cl">
+			<label class="form-label col-xs-4 col-sm-2">Banner链接</label>
+			<div class="formControls col-xs-8 col-sm-9">
+				<input type="text" class="input-text" value="" placeholder="" id="url" name="">
+			</div>
+		</div>
+		<div class="row cl">
+			<label class="form-label col-xs-4 col-sm-2">缩略图：</label>
+			<img style="width: 200px" src="" alt="" id='img'> 
+			<div class="formControls col-xs-8 col-sm-9">
+				  <input type="file" name='image' id="imagelist">
+				  <button onclick="Req_ajax()" class="btn btn-default btn-uploadstar radius ml-10">上传</button>
+			</div>
+		</div>
+
+		<div class="row cl">
+			<div class="col-xs-8 col-sm-9 col-xs-offset-4 col-sm-offset-2">
+				<button onClick="updateBanner();" class="btn btn-primary radius"><i class="Hui-iconfont">&#xe632;</i> 提交</button>
+				<button onClick="layer_close();" class="btn btn-default radius" type="button">&nbsp;&nbsp;取消&nbsp;&nbsp;</button>
+			</div>
+		</div>
+	</form>
+</div>
+</div>
+
+<!--_footer 作为公共模版分离出去-->
+<script type="text/javascript" src="lib/jquery/1.9.1/jquery.min.js"></script> 
+<script type="text/javascript" src="lib/layer/2.4/layer.js"></script> 
+ 
+<script type="text/javascript" src="lib/jquery.validation/1.14.0/jquery.validate.js"></script> 
+<script type="text/javascript" src="lib/jquery.validation/1.14.0/validate-methods.js"></script> 
+<script type="text/javascript" src="lib/jquery.validation/1.14.0/messages_zh.js"></script> 
+<script type="text/javascript" src="static/h-ui/js/H-ui.js"></script> 
+<script type="text/javascript" src="static/h-ui.admin/js/H-ui.admin.page.js"></script> 
+
+<!--/_footer /作为公共模版分离出去-->
+
+<!--请在下方写此页面业务相关的脚本-->
+<script type="text/javascript" src="lib/webuploader/0.1.5/webuploader.min.js"></script> 
+<script type="text/javascript">
+
+	let localstorage=window.localStorage;
+	let sessionSge=window.sessionStorage;
+	
+	let tokens=sessionSge.getItem('token');
+	let imgPath=null;
+
+ 	let OL_Action_Root = "http://localhost:3000";
+ 	init();
+ 	function init(){
+		//jq可以自动补全ajax的路径
+	 	$.post('/admin/banner/getBannerById',{id:localstorage.getItem('id'),token:tokens},function(res){
+	 		$('#name').val(res.data[0].name);
+	 		$('#url').val(res.data[0].url);
+	 		$('#img').attr('src',OL_Action_Root+res.data[0].imgPath);
+	 		imgPath=res.data[0].imgPath;
+	 	})
+ 	}
+
+	/*修改轮播图信息*/
+
+	function updateBanner(){
+			//获取要修改的信息
+			let data={
+				id:localstorage.getItem('id'),
+				imgPath:imgPath,
+				url:$('#url').val(),
+				name:$('#name').val(),
+				token:tokens
+			}
+	        $.post(OL_Action_Root+'/admin/banner/updateBanner',data,function(res){
+	        	if (res.err==0) {
+	        		console.log(res.msg)
+	        		//调用关闭窗口，回到主页面
+					var index = parent.layer.getFrameIndex(window.name);
+					parent.$('.btn-refresh').click();
+					parent.layer.close(index);
+				}else{
+	                alert(res.msg)
+				}
+	        })
+	}
+	//上传图片 出现上传之后闪退的情况 1)form-div 2)取消系统默认事件
+	function Req_ajax(){
+		//获取图片信息
+		let file=$('#imagelist')[0].files[0];
+		//将图片添加到formdata
+		let formdata=new FormData();
+		formdata.append('test',file);
+		console.log(formdata.get('test'));
+
+		$.ajax({
+			url:OL_Action_Root+'/upload/img',
+			type:'POST',
+			data:formdata,
+			//get方法默认缓存机制 请求url 没有发生变化
+			//数据是从缓冲获取而不是服务器。url后方连接一个时间戳
+			cache:false,
+			//json urlencode formdata
+			contentType:false,
+			//默认的数据解析
+			processData:false,
+			success:function(data){
+				if(data.err==0){
+					$('#img').attr('src',OL_Action_Root+data.data);
+					imgPath=data.data;
+				}else{
+					layer.msg('上传失败!',{icon:1,time:1000});
+				}
+			},
+		    error: function(jqXHR, textStatus, errorThrown){
+	             document.getElementById("status").innerHTML = "<span style='color:#EF0000'>连接不到服务器，请检查网络！</span>";
+	        }
+		})
+	}
+</script>
+</body>
+</html>
